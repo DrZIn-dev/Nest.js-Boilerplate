@@ -23,7 +23,6 @@ export class CreateMemberDto implements Readonly<CreateMemberDto> {
     required: true,
     minLength: 12,
     maxLength: 20,
-    uniqueItems: true,
   })
   @IsString()
   @IsNotEmpty()
