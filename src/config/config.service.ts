@@ -24,6 +24,10 @@ class ConfigService {
     return this.getValue('PORT', true);
   }
 
+  public getJwtSecret() {
+    return 'hsadkfjjhsadfkjhsdakfhsdkjafhkasdf';
+  }
+
   public getSaltRounds() {
     return 8;
   }
