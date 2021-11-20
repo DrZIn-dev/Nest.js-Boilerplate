@@ -11,7 +11,7 @@ export class MemberService {
     @InjectRepository(Member) private readonly memberRepo: Repository<Member>,
   ) {}
 
-  public async create(memberDto: CreateMemberDto) {
+  public async create(memberDto: CreateMemberDto): Promise<string> {
     const hashPassword = await bcrypt.hash(
       memberDto.password,
       configService.getSaltRounds(),
@@ -22,5 +22,11 @@ export class MemberService {
     newMember.password = hashPassword;
     const insertResult = await this.memberRepo.save(newMember);
     return insertResult.id;
+  }
+
+  public async findByUsername(
+    username: CreateMemberDto['username'],
+  ): Promise<Member> {
+    return this.memberRepo.findOne({ where: { username } });
   }
 }
