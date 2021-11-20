@@ -2,12 +2,12 @@ import { CreateMemberDto } from '@/member/dto/create-member.dto';
 import { MemberService } from '@/member/member.service';
 import { Body, Controller, Post } from '@nestjs/common';
 
-@Controller('authentication')
+@Controller('auth')
 export class AuthenticationController {
   constructor(private memberService: MemberService) {}
 
-  @Post('register')
+  @Post('/register')
   public async register(@Body() createMemberDto: CreateMemberDto) {
-    return this.memberService.create(createMemberDto);
+    return await this.memberService.create(createMemberDto);
   }
 }
