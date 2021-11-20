@@ -11,10 +11,6 @@ export class MemberService {
     @InjectRepository(Member) private readonly memberRepo: Repository<Member>,
   ) {}
 
-  public getAll() {
-    return this.memberRepo.find();
-  }
-
   public async create(memberDto: CreateMemberDto) {
     const hashPassword = await bcrypt.hash(
       memberDto.password,
