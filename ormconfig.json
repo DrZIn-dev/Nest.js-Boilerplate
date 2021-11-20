@@ -5,13 +5,10 @@
   "username": "postgres",
   "password": "password",
   "database": "todo",
-  "entities": [
-    "**/*.entity{.ts,.js}"
-  ],
+  "entities": ["src/model/**/*.entity{.ts,.js}"],
   "migrationsTableName": "migration",
-  "migrations": [
-    "src/migration/*.ts"
-  ],
+  "migrations": ["src/migration/*.ts"],
+  "migrationsRun": true,
   "cli": {
     "migrationsDir": "src/migration"
   },
