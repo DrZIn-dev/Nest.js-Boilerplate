@@ -21,6 +21,7 @@ module.exports = {
     'scripts',
     '.module.ts',
     'main.ts',
+    'dto',
   ],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
     prefix: '<rootDir>/',

@@ -22,7 +22,9 @@ export class AuthenticationController {
   @ApiInternalServerErrorResponse({
     description: 'Something went wrong.',
   })
-  public async register(@Body() createMemberDto: CreateMemberDto) {
+  public async register(
+    @Body() createMemberDto: CreateMemberDto,
+  ): Promise<string> {
     return await this.memberService.create(createMemberDto);
   }
 }
