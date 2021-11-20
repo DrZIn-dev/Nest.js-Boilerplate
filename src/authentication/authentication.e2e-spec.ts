@@ -39,7 +39,7 @@ describe('Cats', () => {
         .send({
           username: internet.userName(),
           name: name.findName(),
-          password: internet.password(),
+          password: internet.password(18),
         } as CreateMemberDto)
         .expect(201)
         .then((response) => {
