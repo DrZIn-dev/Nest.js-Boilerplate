@@ -1,6 +1,9 @@
+import { Member } from '@/member.decorator';
 import { CreateMemberDto } from '@/member/dto/create-member.dto';
 import { MemberService } from '@/member/member.service';
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Member as MemberEntity } from '@/model/member.entity';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -12,6 +15,12 @@ import {
 @Controller('auth')
 export class AuthenticationController {
   constructor(private memberService: MemberService) {}
+
+  @UseGuards(AuthGuard('local'))
+  @Post('/login')
+  async login(@Member() user: MemberEntity) {
+    return user;
+  }
 
   @Post('/register')
   @HttpCode(201)

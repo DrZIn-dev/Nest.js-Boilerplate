@@ -16,9 +16,7 @@ export class AuthenticationService {
         validateMemberDto.password,
         password,
       );
-      if (comparePassword) {
-        return { name, username };
-      }
+      if (comparePassword) return { name, username };
     }
     return null;
   }

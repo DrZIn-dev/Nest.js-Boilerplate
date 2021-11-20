@@ -2,7 +2,16 @@ POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
-    "name": "hello",
-    "username": "hellowrld",
+    "name": "hello_2",
+    "username": "hellowrld-2",
+    "password": "adhsfkdasjfh"
+}
+
+###
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "username": "hellowrld-2",
     "password": "adhsfkdasjfh"
 }
