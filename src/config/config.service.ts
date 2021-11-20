@@ -11,7 +11,6 @@ class ConfigService {
     if (!value && throwOnMissing) {
       throw new Error(`config error - missing env.${key}`);
     }
-
     return value;
   }
 
@@ -22,6 +21,10 @@ class ConfigService {
 
   public getPort() {
     return this.getValue('PORT', true);
+  }
+
+  public getSaltRounds() {
+    return 8;
   }
 
   public isProduction() {
@@ -49,6 +52,7 @@ class ConfigService {
       },
 
       ssl: this.isProduction(),
+      keepConnectionAlive: true,
     };
   }
 }
