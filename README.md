@@ -1,6 +1,7 @@
 ## Information.
 
-This Project Implement From branch **boilerplate-v.1.0.0** .
+- This Project Implement From branch **boilerplate-v.1.0.0** .
+- Postgres Column Name User **snake_case** .
 
 ## Feature
 
@@ -13,10 +14,19 @@ This Project Implement From branch **boilerplate-v.1.0.0** .
 
 ### MVPs Feature
 
-- [ ] Todo ER Diagram.
+- [x] Todo ER Diagram.
+- [x] Todo Entity
 - [ ] Authentication
 - [ ] Todo.
 - [ ] Assign Member.
+
+### Todo Entity
+
+- [x] Base Entity.
+- [x] Member.
+- [x] Todo.
+- [x] Assigned Member.
+- [x] All Class Validate.
 
 #### Authentication
 
@@ -51,5 +61,127 @@ This Project Implement From branch **boilerplate-v.1.0.0** .
     ```
     docker-compose up -d
     ```
+
+---
+
+### Create Database Entity and Run Migration.
+
+Our Entity Contain TypeORM Column ,Class Validation And Serialize.
+
+1. Create File **member.entity.ts**
+
+   ```typescript
+   import { Exclude } from 'class-transformer';
+   import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+   import { Column, Entity } from 'typeorm';
+   import { BaseEntity } from './base.entity';
+
+   @Entity({ name: 'member' })
+   export class MemberEntity extends BaseEntity {
+     @Column({ type: 'varchar', length: 255, nullable: false }) // typeORM
+     name: string;
+
+     // class-validate
+     @IsString()
+     @IsNotEmpty()
+     @MaxLength(255)
+     @Column({ type: 'varchar', length: 255, nullable: false }) // typeORM
+     username: string;
+
+     @Exclude() // serialize
+     // class-validate
+     @IsString()
+     @IsNotEmpty()
+     @MinLength(8)
+     @MaxLength(20)
+     @Column({ type: 'text', nullable: false }) // typeORM
+     password: string;
+   }
+   ```
+
+2. Create File **todo.entity.ts**
+
+   ```typescript
+   import { Type } from 'class-transformer';
+   import {
+     IsDate,
+     IsEnum,
+     IsNotEmpty,
+     IsString,
+     MaxLength,
+   } from 'class-validator';
+   import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+   import { BaseEntity } from './base.entity';
+   import { MemberEntity } from './member.entity';
+
+   export enum TODO_STATUS {
+     NOT_STARTED,
+     IN_PROGRESS,
+     COMPLETE,
+   }
+
+   @Entity({ name: 'todo' })
+   export class TodoEntity extends BaseEntity {
+     @ManyToOne(() => MemberEntity)
+     @JoinColumn({ name: 'member_id' })
+     member: MemberEntity;
+
+     @IsString()
+     @IsNotEmpty()
+     @MaxLength(255)
+     @Column({ type: 'varchar', length: 255, nullable: false })
+     title: string;
+
+     @IsString()
+     @IsNotEmpty()
+     @MaxLength(255)
+     @Column({ type: 'varchar', length: 255, nullable: false })
+     description: string;
+
+     @IsEnum(TODO_STATUS)
+     @Column({
+       type: 'enum',
+       enum: TODO_STATUS,
+       default: TODO_STATUS.NOT_STARTED,
+     })
+     status: TODO_STATUS;
+
+     @Type(() => Date)
+     @IsDate()
+     @Column({ type: 'timestamptz', nullable: false })
+     due_date: Date;
+   }
+   ```
+
+3. Create File **assignedMembers.entity.ts**
+
+   ```typescript
+   import { Entity, JoinColumn, ManyToOne } from 'typeorm';
+   import { BaseEntity } from './base.entity';
+   import { TodoEntity } from './todo.entity';
+
+   @Entity({ name: 'assigned_members' })
+   export class MemberEntity extends BaseEntity {
+     @ManyToOne(() => TodoEntity)
+     @JoinColumn({ name: 'todo_id' })
+     todo: TodoEntity;
+
+     @ManyToOne(() => MemberEntity)
+     @JoinColumn({ name: 'member_id' })
+     member: MemberEntity;
+   }
+   ```
+
+4. Run Migration Generate.
+
+   ```shell
+   npm run typeorm:migration:generate -- init
+   ```
+
+5. Run Migration Run and Look at The Result in PGAdmin.
+
+   ```shell
+   npm run typeorm:migration:run
+   ```
 
 ---
