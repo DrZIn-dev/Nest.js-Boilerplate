@@ -1,9 +1,0 @@
-###
-POST http://localhost:3000/playground
-Content-Type: application/json
-
-{
-    "name": "hello_2",
-    "description": "hellowrld-2",
-    "dueDate": "2021-11-21T09:22:09.188Z"
-}
