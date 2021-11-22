@@ -16,7 +16,7 @@ export abstract class BaseEntity {
     default: () => 'CURRENT_TIMESTAMP',
     nullable: false,
   })
-  createAt: Date;
+  create_at: Date;
 
   @Exclude()
   @UpdateDateColumn({
@@ -24,9 +24,9 @@ export abstract class BaseEntity {
     default: () => 'CURRENT_TIMESTAMP',
     nullable: false,
   })
-  updateAt: Date;
+  update_at: Date;
 
   @Exclude()
   @DeleteDateColumn({ type: 'timestamptz' })
-  deleteAt: Date;
+  delete_at: Date;
 }
