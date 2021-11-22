@@ -2,6 +2,7 @@
 
 - This Project Implement From branch **boilerplate-v.1.0.0** .
 - Postgres Column Name User **snake_case** .
+- Base Path is **/src**
 
 ## Feature
 
@@ -68,7 +69,7 @@
 
 Our Entity Contain TypeORM Column ,Class Validation And Serialize.
 
-1. Create File **member.entity.ts**
+1. Create File **model/member.entity.ts**
 
    ```typescript
    import { Exclude } from 'class-transformer';
@@ -99,7 +100,7 @@ Our Entity Contain TypeORM Column ,Class Validation And Serialize.
    }
    ```
 
-2. Create File **todo.entity.ts**
+2. Create File **model/todo.entity.ts**
 
    ```typescript
    import { Type } from 'class-transformer';
@@ -153,7 +154,7 @@ Our Entity Contain TypeORM Column ,Class Validation And Serialize.
    }
    ```
 
-3. Create File **assignedMembers.entity.ts**
+3. Create File **model/assignedMembers.entity.ts**
 
    ```typescript
    import { Entity, JoinColumn, ManyToOne } from 'typeorm';
@@ -185,3 +186,63 @@ Our Entity Contain TypeORM Column ,Class Validation And Serialize.
    ```
 
 ---
+
+### Member Service.
+
+Create Member Service For Control Member Entity.
+
+1. Create File **member/member.dto.ts**
+   Use Pick Type From Member Entity.
+
+   ```typescript
+   import { MemberEntity } from '@/model/member.entity';
+   import { PickType } from '@nestjs/mapped-types';
+
+   export class CreateMemberDto extends PickType(MemberEntity, [
+     'name',
+     'username',
+     'password',
+   ] as const) {}
+   ```
+
+2. Create File **member/member.module.ts**.
+
+   ```typescript
+   import { MemberEntity } from '@/model/member.entity';
+   import { Module } from '@nestjs/common';
+   import { TypeOrmModule } from '@nestjs/typeorm';
+   import { MemberService } from './member.service';
+
+   @Module({
+     imports: [TypeOrmModule.forFeature([MemberEntity])],
+     providers: [MemberService],
+   })
+   export class MemberModule {}
+   ```
+
+3. Create File **member/member.service.ts**.
+
+   ```typescript
+   import { MemberEntity } from '@/model/member.entity';
+   import { Injectable } from '@nestjs/common';
+   import { InjectRepository } from '@nestjs/typeorm';
+   import { Repository } from 'typeorm';
+   import { CreateMemberDto } from './member.dto';
+
+   @Injectable()
+   export class MemberService {
+     constructor(
+       @InjectRepository(MemberEntity)
+       private memberRepository: Repository<MemberEntity>,
+     ) {}
+
+     public async create(dto: CreateMemberDto): Promise<string> {
+       const insertResult = await this.memberRepository.save(dto);
+       return insertResult.id;
+     }
+   }
+   ```
+
+   **Best Practice.**
+
+   - create method return on id.
