@@ -17,7 +17,7 @@
 
 - [x] Todo ER Diagram.
 - [x] Todo Entity
-- [ ] Authentication
+- [x] Authentication
 - [ ] Todo.
 - [ ] Assign Member.
 
@@ -32,11 +32,13 @@
 #### Authentication
 
 - [x] Member Module and Service.
-- [ ] Register Member.
-- [ ] Login With Username and Password.
+- [x] Register Member.
+- [x] Login With Username and Password.
 - Return JWT Token.
-- [ ] Get Member Profile From JWT Token.
-- [ ] validate JWT Token In header **X-Member**
+- [x] Get Member Profile From JWT Token.
+- [x] validate JWT Token In header **X-Member-Token**
+- Reject **401** if header is not present
+- Reject **403** if header is present but incorrect
 
 ---
 
@@ -244,8 +246,13 @@ Create Member Service For Control Member Entity.
        private memberRepository: Repository<MemberEntity>,
      ) {}
 
-     public async create(dto: CreateMemberDto): Promise<string> {
-       const insertResult = await this.memberRepository.save(dto);
+     public async create(dto: CreateMemberDto): Promise<MemberEntity['id']> {
+       const newMember = new MemberEntity(dto);
+       newMember.password = await hash(
+         newMember.password,
+         configService.getSaltRounds(),
+       );
+       const insertResult = await this.memberRepository.save(newMember);
        return insertResult.id;
      }
    }
@@ -257,7 +264,7 @@ Create Member Service For Control Member Entity.
 
 ---
 
-### Authentication
+### Authentication - Register Member
 
 1. Create Template File for Auth module.
 
@@ -308,6 +315,281 @@ Create Member Service For Control Member Entity.
      @HttpCode(HttpStatus.CREATED)
      public async register(@Body() dto: CreateMemberDto) {
        return await this.memberService.create(dto);
+     }
+   }
+   ```
+
+---
+
+### Authentication - Login
+
+- เข้าสู่ระบบโดยใช้ username และ password
+- เมื่อเข้าสู้ระบบสำเร็จจะได้รับ access token
+
+1. สร้าง method findByUsername ใน **member/member.service.ts**.
+
+   ```typescript
+   public async findByUsername(
+     username: MemberEntity['username'],
+   ): Promise<MemberEntity> {
+     return await this.memberRepository.findOne({ where: { username } });
+   }
+   ```
+
+2. สร้าง method validateMember ใน **auth/auth.service.ts**
+
+   ```typescript
+   import { MemberService } from '@/member/member.service';
+   import { MemberEntity } from '@/model/member.entity';
+   import { Injectable } from '@nestjs/common';
+   import { compare } from 'bcrypt';
+   import { LoginDto } from './auth.dto';
+
+   @Injectable()
+   export class AuthService {
+     constructor(private memberService: MemberService) {}
+
+     public async validateMember(dto: LoginDto): Promise<MemberEntity> {
+       const member = await this.memberService.findByUsername(dto.username);
+       if (member) {
+         const comparePassword = await compare(dto.password, member.password);
+         if (comparePassword) return member;
+       }
+       return null;
+     }
+   }
+   ```
+
+3. สร้าง LocalStrategy ใน **auth/local.strategy.ts**
+
+   ```typescript
+   import { Injectable, UnauthorizedException } from '@nestjs/common';
+   import { PassportStrategy } from '@nestjs/passport';
+   import { Strategy } from 'passport-local';
+   import { AuthService } from './auth.service';
+
+   @Injectable()
+   export class LocalStrategy extends PassportStrategy(Strategy) {
+     constructor(private authService: AuthService) {
+       super();
+     }
+
+     async validate(username: string, password: string): Promise<any> {
+       const member = await this.authService.validateMember({
+         username,
+         password,
+       });
+       if (!member) {
+         throw new UnauthorizedException();
+       }
+       return member;
+     }
+   }
+   ```
+
+4. เรียกใช้งาน LocalStrategy ใน **src/auth.module.ts**
+
+- ทำให้สามารถใช้งาน LocalAuthGuard ใน controller ได้
+
+  ```typescript
+  providers: [AuthService, MemberService, LocalStrategy], ``;
+  ```
+
+5. สร้างไฟล์ **local-auth.guard.ts**
+
+   ```typescript
+   import { Injectable } from '@nestjs/common';
+   import { AuthGuard } from '@nestjs/passport';
+
+   @Injectable()
+   export class LocalAuthGuard extends AuthGuard('local') {}
+   ```
+
+6. สร้าง method login ใน **auth/auth.controller.ts**.
+
+- เรียกใช้งาน LocalAuthGuard เพื่อให้ passport.js เรียกใช้งาน method validate ใน LocalStrategy
+- เมื่อ Login สำเร็จจะส่งข้อมูลของ Member กับไปทาง Response
+
+  ```typescript
+  @Post('login')
+  @UseGuards(LocalAuthGuard)
+  public async login(@User() member: MemberEntity) {
+    return member;
+  }
+  ```
+
+7. สร้างไฟล์ **auth/jwt.strategy.ts**
+
+- ถูกเรียกใช้เมื่อมีการใช้ **JwtAuthGuard** ใน **src/auth.controller.ts**
+
+  ```typescript
+  import { configService } from '@/config/config.service';
+  import { Injectable } from '@nestjs/common';
+  import { PassportStrategy } from '@nestjs/passport';
+  import { ExtractJwt, Strategy } from 'passport-jwt';
+
+  export interface JWTPayload {
+    username: MemberEntity['username'];
+    name: MemberEntity['name'];
+    sub: MemberEntity['id'];
+  }
+
+  @Injectable()
+  export class JwtStrategy extends PassportStrategy(Strategy) {
+    constructor() {
+      super({
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        ignoreExpiration: false,
+        secretOrKey: configService.getJwtSecret(),
+      });
+    }
+
+    async validate(payload: JWTPayload) {
+      return {
+        username: payload.username,
+        name: payload.name,
+        id: payload.sub,
+      };
+    }
+  }
+  ```
+
+8. เรียกใช้่งาน **JwtStrategy,JWTModule** ใน **auth/auth.module.ts**
+
+- ทำให้สามารถ เรียกใช้งาน **JwtAuthGuard** ใน controller ได้
+
+  ```typescript
+  @Module({
+  imports: [
+    TypeOrmModule.forFeature([MemberEntity]),
+    JwtModule.register({
+      secret: configService.getJwtSecret(),
+      signOptions: { expiresIn: '7d' },
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, MemberService, LocalStrategy, JwtStrategy],
+  })
+  ```
+
+9. สร้าง login method ใน **auth/auth.service.ts**
+
+- ทำหน้าที่ sign jwt payload เป็น jwt token เพื่อส่งให้ client
+
+  ```typescript
+  import { MemberService } from '@/member/member.service';
+  import { MemberEntity } from '@/model/member.entity';
+  import { Injectable } from '@nestjs/common';
+  import { JwtService } from '@nestjs/jwt';
+  import { compare } from 'bcrypt';
+  import { LoginDto } from './auth.dto';
+
+  @Injectable()
+  export class AuthService {
+    constructor(
+      private memberService: MemberService,
+      private jwtService: JwtService,
+    ) {}
+
+    public async login(member: MemberEntity) {
+      const jwtPayload = {
+        username: member.username,
+        name: member.name,
+        sub: member.id,
+      };
+
+      return this.jwtService.sign(jwtPayload);
+    }
+
+    public async validateMember(dto: LoginDto): Promise<MemberEntity> {
+      const member = await this.memberService.findByUsername(dto.username);
+      if (member) {
+        const comparePassword = await compare(dto.password, member.password);
+        if (comparePassword) return member;
+      }
+      return null;
+    }
+  }
+  ```
+
+10. ใช้งาน method login ใน **auth/auth.controller.ts**
+
+    ```typescript
+    @Post('login')
+    @UseGuards(LocalAuthGuard)
+    public async login(@User() member: MemberEntity) {
+      return this.authService.login(member);
+    }
+    ```
+
+---
+
+### Authentication - Profile
+
+1. สร้าง method profile ใน **auth/auth.controller.ts**
+
+- เรียกใช้งาน JwtAuthGuard เพื่อทำการตรวจสอบ jwt token และ decode เพื่อได้ JWT Payload
+- เมื่อ Login สำเร็จได้ข้อมูลของ Member กลับไป
+
+  ```typescript
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  public async profile(@User() jwtPayload: JWTPayload) {
+    return jwtPayload;
+  }
+  ```
+
+---
+
+### Authentication - ScaMo
+
+1. แก้ไข **auth/jwt.strategy.ts** เพื่อให้เช็ค Token จาก **X-Member-Token** แทน
+
+- เมื่อไม่ได้แนบ Token มากับ X-Member-Token จะ Return 401
+
+  ```typescript
+  constructor() {
+    super({
+      // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromHeader('x-member-token'),
+      ignoreExpiration: false,
+      secretOrKey: configService.getJwtSecret(),
+    });
+  }
+  ```
+
+2. แก้ไข **jwt-auth.guard.ts** ให้รอบรับตามโจทย์
+
+   ```typescript
+   import {
+     ExecutionContext,
+     ForbiddenException,
+     Injectable,
+     UnauthorizedException,
+   } from '@nestjs/common';
+   import { AuthGuard } from '@nestjs/passport';
+   import { JsonWebTokenError } from 'jsonwebtoken';
+
+   @Injectable()
+   export class JwtAuthGuard extends AuthGuard('jwt') {
+     canActivate(context: ExecutionContext) {
+       // Add your custom authentication logic here
+       // for example, call super.logIn(request) to establish a session.
+       return super.canActivate(context);
+     }
+
+     handleRequest(err, user, info: JsonWebTokenError) {
+       if (info) {
+         const { message } = info;
+         if (message === 'No auth token') throw new UnauthorizedException();
+
+         throw new ForbiddenException();
+       }
+       // You can throw an exception based on either "info" or "err" arguments
+       if (err || !user) {
+         throw err || new UnauthorizedException();
+       }
+       return user;
      }
    }
    ```
