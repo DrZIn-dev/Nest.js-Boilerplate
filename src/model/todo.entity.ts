@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { IsDate, IsNotEmpty, IsString } from 'class-validator';
 import { Column, Entity } from 'typeorm';
 import { BaseEntity } from './base.entity';
@@ -13,6 +14,7 @@ export class TodoEntity extends BaseEntity {
   @IsString()
   description: string;
 
+  @Exclude()
   @Column({ type: 'timestamptz', nullable: false })
   @IsDate()
   dueDate: Date;
