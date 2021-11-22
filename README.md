@@ -31,7 +31,8 @@
 
 #### Authentication
 
-- [ ] Register member.
+- [x] Member Module and Service.
+- [ ] Register Member.
 - [ ] Login With Username and Password.
 - Return JWT Token.
 - [ ] Get Member Profile From JWT Token.
