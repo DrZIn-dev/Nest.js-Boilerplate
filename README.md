@@ -287,6 +287,8 @@ Create Member Service For Control Member Entity.
 
 3. สร้าง method **register** ใน **auth/auth.controller.ts** โดยการเรียกใช้ MemberService
 
+   - ระบุให้ อยู่ที่ **POST auth/register**
+
    ```typescript
    import { CreateMemberDto } from '@/member/member.dto';
    import { MemberService } from '@/member/member.service';
