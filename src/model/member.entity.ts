@@ -15,7 +15,8 @@ export class MemberEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: false }) // typeORM
   username: string;
 
-  @Exclude() // serialize
+  // @Exclude()
+  @Exclude({ toPlainOnly: true })
   // class-validate
   @IsString()
   @IsNotEmpty()
@@ -23,4 +24,9 @@ export class MemberEntity extends BaseEntity {
   @MaxLength(20)
   @Column({ type: 'text', nullable: false }) // typeORM
   password: string;
+
+  constructor(partial: Partial<MemberEntity>) {
+    super();
+    Object.assign(this, partial);
+  }
 }
