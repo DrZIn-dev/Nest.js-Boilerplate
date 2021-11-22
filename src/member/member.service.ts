@@ -11,7 +11,7 @@ export class MemberService {
     private memberRepository: Repository<MemberEntity>,
   ) {}
 
-  public async create(dto: CreateMemberDto): Promise<string> {
+  public async create(dto: CreateMemberDto): Promise<MemberEntity['id']> {
     const insertResult = await this.memberRepository.save(dto);
     return insertResult.id;
   }
