@@ -160,10 +160,11 @@ Our Entity Contain TypeORM Column ,Class Validation And Serialize.
    ```typescript
    import { Entity, JoinColumn, ManyToOne } from 'typeorm';
    import { BaseEntity } from './base.entity';
+   import { MemberEntity } from './member.entity';
    import { TodoEntity } from './todo.entity';
 
    @Entity({ name: 'assigned_members' })
-   export class MemberEntity extends BaseEntity {
+   export class AssignedMemberEntity extends BaseEntity {
      @ManyToOne(() => TodoEntity)
      @JoinColumn({ name: 'todo_id' })
      todo: TodoEntity;
@@ -188,7 +189,7 @@ Our Entity Contain TypeORM Column ,Class Validation And Serialize.
 
 ---
 
-### Member Service.
+### Member Module.
 
 Create Member Service For Control Member Entity.
 
@@ -247,3 +248,33 @@ Create Member Service For Control Member Entity.
    **Best Practice.**
 
    - create method return on id.
+
+---
+
+### Authentication
+
+1. Create Template File for Auth module.
+
+   ```shell
+   nest g module auth --no-spec
+   nest g controller auth --no-spec
+   nest g service auth --no-spec
+   ```
+
+2. Register Entity and Member Service in Auth Module.
+
+   ```typescript
+   import { MemberService } from '@/member/member.service';
+   import { MemberEntity } from '@/model/member.entity';
+   import { Module } from '@nestjs/common';
+   import { TypeOrmModule } from '@nestjs/typeorm';
+   import { AuthController } from './auth.controller';
+   import { AuthService } from './auth.service';
+
+   @Module({
+     imports: [TypeOrmModule.forFeature([MemberEntity])],
+     controllers: [AuthController],
+     providers: [AuthService, MemberService],
+   })
+   export class AuthModule {}
+   ```

@@ -1,9 +1,10 @@
 import { Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { MemberEntity } from './member.entity';
 import { TodoEntity } from './todo.entity';
 
 @Entity({ name: 'assigned_members' })
-export class MemberEntity extends BaseEntity {
+export class AssignedMemberEntity extends BaseEntity {
   @ManyToOne(() => TodoEntity)
   @JoinColumn({ name: 'todo_id' })
   todo: TodoEntity;
