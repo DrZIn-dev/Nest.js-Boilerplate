@@ -5,6 +5,7 @@ import { User } from '@/user.decorator';
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Param,
@@ -37,5 +38,15 @@ export class TodoController {
     @Body() dto: UpdateTodoDto,
   ) {
     return await this.todoService.update(member.id, id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async delete(
+    @User() member: MemberEntity,
+    @Param('id') id: TodoEntity['id'],
+  ) {
+    return await this.todoService.delete(member.id, id);
   }
 }
