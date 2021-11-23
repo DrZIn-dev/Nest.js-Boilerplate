@@ -930,3 +930,31 @@ RATE_LIMIT_ALLOW=10
    ```
 
 ---
+
+### Todo - Assigned Member
+
+1. แก้ไข UpdateTodoDto ให้รองรับ members
+
+```typescript
+
+```
+
+### Task Scheduler
+
+1. ติดตั้ง package
+
+```shell
+npm install --save @nestjs/schedule
+npm install --save-dev @types/cron
+```
+
+2. ใช้งานใน **app.module.ts**
+
+   ```typescript
+   imports: [
+       ScheduleModule.forRoot(),
+       // ...other module
+     ],
+   ```
+
+3. สร้าง **schedule/notification.service.ts**
