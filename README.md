@@ -14,8 +14,8 @@
 
 - [x] Only member can create new todo with **not_started** status.
 - [ ] Every member can list **existing** todo.
-- [ ] Only todo **owner** can update their **title** and **description**.
-- [ ] Only todo **owner** can change status.
+- [x] Only todo **owner** can update their **title** and **description**.
+- [x] Only todo **owner** can change status.
 - [ ] Only todo **owner** can delete todo.
 - [ ] Send notification to all assigned member when **owner** delete **active** todo.
 
@@ -711,5 +711,64 @@ Create Member Service For Control Member Entity.
     ) {
       return await this.todoService.create(member.id, dto);
     }
+  }
+  ```
+
+### Todo - Update
+
+- update title, description and status
+
+1. สร้าง class UpdateTodoDto ใน **todo/todo.dto.ts**
+
+- เป็น PartialType ทำให้ client ไม่ต้องส่งบาง column มาได้
+
+  ```typescript
+  export class UpdateTodoDto extends PartialType(
+    PickType(TodoEntity, ['title', 'description', 'status'] as const),
+  ) {}
+  ```
+
+2. เพิ่ม ValidationPipe ใน main.ts
+
+- ป้องกันการส่ง key เกินจากที่ระบุไว้ใน dtp
+
+  ```typescript
+  // other code
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  ```
+
+3. สร้าง method update ใน **todo/todo.service.ts**
+
+- เช็ค memberId ว่าเป็นเจ้าของ Todo ก่อนอัพเดต
+
+  ```typescript
+  public async update(
+    memberId: MemberEntity['id'],
+    todoId: MemberEntity['id'],
+    dto: UpdateTodoDto,
+  ) {
+    const isExists = await this.todoRepository.findOne({
+      where: { id: todoId, member: { id: memberId } },
+    });
+    if (!isExists) throw new ForbiddenException();
+    await this.todoRepository.update(todoId, dto);
+    return Promise.resolve();
+  }
+  ```
+
+4. สร้าง route ใน **todo/todo.controller.ts**
+
+- เรียกใช้งาน **JWTAuthGuard**
+
+  ```typescript
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async update(
+    @User() member: MemberEntity,
+    @Param('id') id: TodoEntity['id'],
+    @Body() dto: UpdateTodoDto,
+  ) {
+    return await this.todoService.update(member.id, id, dto);
   }
   ```
