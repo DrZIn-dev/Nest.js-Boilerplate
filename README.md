@@ -6,39 +6,8 @@
 
 ## Feature
 
-- [x] Ready To Run.
-- [x] Postgres Database as Container.
-- [x] Config Service
-- Read and Ensure .env variable.
-- [x] .env Sample.
-- [x] Connect Postgres Database.
-
-### MVPs Feature
-
-- [x] Todo ER Diagram.
-- [x] Todo Entity
-- [x] Authentication
-- [ ] Todo.
-- [ ] Assign Member.
-
-### Todo Entity
-
-- [x] Base Entity.
-- [x] Member.
-- [x] Todo.
-- [x] Assigned Member.
-- [x] All Class Validate.
-
-#### Authentication
-
-- [x] Member Module and Service.
 - [x] Register Member.
-- [x] Login With Username and Password.
-- Return JWT Token.
-- [x] Get Member Profile From JWT Token.
-- [x] validate JWT Token In header **X-Member-Token**
-- Reject **401** if header is not present
-- Reject **403** if header is present but incorrect
+- [ ] Only member can create new todo with **not_started** status
 
 ---
 
@@ -591,3 +560,146 @@ Create Member Service For Control Member Entity.
      }
    }
    ```
+
+---
+
+### Global Module
+
+1. สร้าง **global.module.ts**
+
+- import JWTModule, TypeORM
+- export JWTModule
+
+  ```typescript
+  import { Global, Module } from '@nestjs/common';
+  import { JwtModule } from '@nestjs/jwt';
+  import { TypeOrmModule } from '@nestjs/typeorm';
+  import { JwtStrategy } from './auth/jwt.strategy';
+  import { configService } from './config/config.service';
+  import { MemberEntity } from './model/member.entity';
+  import { TodoEntity } from './model/todo.entity';
+
+  @Global()
+  @Module({
+    imports: [
+      JwtModule.register({
+        secret: configService.getJwtSecret(),
+        signOptions: { expiresIn: '7d' },
+      }),
+      TypeOrmModule.forFeature([TodoEntity, MemberEntity]),
+    ],
+    controllers: [],
+    providers: [JwtStrategy],
+    exports: [JwtModule, TypeOrmModule],
+  })
+  export class GlobalModule {}
+  ```
+
+2. ลบ import JWTModule จาก module อื่นๆ
+
+---
+
+### Todo - Create
+
+1. สร้าง **todo/todo.module.ts**
+
+   ```shell
+   nest g module todo
+   ```
+
+2. สร้าง **todo/todo.service.ts**
+
+   ```shell
+   nest g service todo
+   ```
+
+3. สร้าง **todo/todo.controller.ts**
+
+   ```shell
+   nest g controller todo
+   ```
+
+4. สร้าง **todo/todo.dto.ts** และ class CreateTodoDto
+
+   ```typescript
+   import { TodoEntity } from '@/model/todo.entity';
+   import { PickType } from '@nestjs/mapped-types';
+
+   export class CreateTodoDto extends PickType(TodoEntity, [
+     'title',
+     'description',
+     'due_date',
+   ] as const) {}
+   ```
+
+5. เรียกใช้งาน todoEntity ใน **todo/todo.module.ts**
+
+   ```typescript
+   import { TypeOrmModule } from '@nestjs/typeorm';
+   import { TodoEntity } from '@/model/todo.entity';
+
+   // other code
+   imports: [TypeOrmModule.forFeature([TodoEntity])],
+   ```
+
+6. สร้าง method create ใน **todo/todo.service.ts**
+
+   ```typescript
+   import { MemberService } from '@/member/member.service';
+   import { MemberEntity } from '@/model/member.entity';
+   import { TodoEntity } from '@/model/todo.entity';
+   import { Injectable } from '@nestjs/common';
+   import { InjectRepository } from '@nestjs/typeorm';
+   import { Repository } from 'typeorm';
+   import { CreateTodoDto } from './todo.dto';
+
+   @Injectable()
+   export class TodoService {
+     constructor(
+       @InjectRepository(TodoEntity)
+       private todoRepository: Repository<TodoEntity>,
+       private memberService: MemberService,
+     ) {}
+
+     public async create(
+       memberId: MemberEntity['id'],
+       dto: CreateTodoDto,
+     ): Promise<TodoEntity['id']> {
+       const member = await this.memberService.findById(memberId);
+       const newTodo: Partial<TodoEntity> = {
+         ...dto,
+         member,
+       };
+
+       const insertResult = await this.todoRepository.save(newTodo);
+       return insertResult.id;
+     }
+   }
+   ```
+
+7. สร้าง method และ ระบุ Route ใน **todo/todo.controller.ts**
+
+- กำหนดให้ Member ที่ **X-Member-Token** ถูกต้องสามารถเข้าใช้งานได้
+
+  ```typescript
+  import { JwtAuthGuard } from '@/jwt-auth.guard';
+  import { MemberEntity } from '@/model/member.entity';
+  import { User } from '@/user.decorator';
+  import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+  import { CreateTodoDto } from './todo.dto';
+  import { TodoService } from './todo.service';
+
+  @Controller('todo')
+  export class TodoController {
+    constructor(private todoService: TodoService) {}
+
+    @Post()
+    @UseGuards(JwtAuthGuard)
+    public async create(
+      @User() member: MemberEntity,
+      @Body() dto: CreateTodoDto,
+    ) {
+      return await this.todoService.create(member.id, dto);
+    }
+  }
+  ```
