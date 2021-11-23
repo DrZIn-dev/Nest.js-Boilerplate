@@ -80,7 +80,7 @@ Our Entity Contain TypeORM Column ,Class Validation And Serialize.
    import { Column, Entity } from 'typeorm';
    import { BaseEntity } from './base.entity';
 
-   @Entity({ name: 'member' })
+   @Entity({ name: 'members' })
    export class MemberEntity extends BaseEntity {
      @Column({ type: 'varchar', length: 255, nullable: false }) // typeORM
      name: string;
@@ -130,7 +130,7 @@ Our Entity Contain TypeORM Column ,Class Validation And Serialize.
      COMPLETE,
    }
 
-   @Entity({ name: 'todo' })
+   @Entity({ name: 'todos' })
    export class TodoEntity extends BaseEntity {
      @ManyToOne(() => MemberEntity)
      @JoinColumn({ name: 'member_id' })

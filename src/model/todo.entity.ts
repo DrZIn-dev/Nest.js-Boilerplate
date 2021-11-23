@@ -16,7 +16,7 @@ export enum TODO_STATUS {
   COMPLETE,
 }
 
-@Entity({ name: 'todo' })
+@Entity({ name: 'todos' })
 export class TodoEntity extends BaseEntity {
   @ManyToOne(() => MemberEntity)
   @JoinColumn({ name: 'member_id' })
