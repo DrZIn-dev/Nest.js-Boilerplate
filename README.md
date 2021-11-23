@@ -16,7 +16,7 @@
 - [ ] Every member can list **existing** todo.
 - [x] Only todo **owner** can update their **title** and **description**.
 - [x] Only todo **owner** can change status.
-- [ ] Only todo **owner** can delete todo.
+- [x] Only todo **owner** can delete todo(soft delete).
 - [ ] Send notification to all assigned member when **owner** delete **active** todo.
 
 ---
@@ -819,5 +819,34 @@ Create Member Service For Control Member Entity.
      return await this.todoService.delete(member.id, id);
    }
    ```
+
+---
+
+### Todo - List
+
+1. สร้าง method getAll ใน **todo/todo.service.ts**
+
+- join member
+
+  ```typescript
+   public async getAll(): Promise<TodoEntity[]> {
+     return await this.todoRepository.find({ relations: ['member'] });
+   }
+  ```
+
+2. สร้าง route ใน **todo/todo.controller.ts**
+
+- ใช้งาน UseInterceptors เพื่อกรอง key ที่ไม่ต้องการให้ Client ได้รับ
+
+  ```typescript
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(ClassSerializerInterceptor)
+  public async getAll() {
+    return await this.todoService
+      .getAll()
+      .then((e) => e.map((todo) => new TodoEntity(todo)));
+  }
+  ```
 
 ---

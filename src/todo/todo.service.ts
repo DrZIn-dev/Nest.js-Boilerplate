@@ -43,7 +43,7 @@ export class TodoService {
     memberId: MemberEntity['id'],
     todoId: MemberEntity['id'],
     dto: UpdateTodoDto,
-  ) {
+  ): Promise<void> {
     const isOwner = await this.validateOwner(memberId, todoId);
     if (!isOwner) throw new ForbiddenException();
     await this.todoRepository.update(todoId, dto);
@@ -53,10 +53,14 @@ export class TodoService {
   public async delete(
     memberId: MemberEntity['id'],
     todoId: MemberEntity['id'],
-  ) {
+  ): Promise<void> {
     const isOwner = await this.validateOwner(memberId, todoId);
     if (!isOwner) throw new ForbiddenException();
     await this.todoRepository.softDelete(todoId);
     return Promise.resolve();
+  }
+
+  public async getAll(): Promise<TodoEntity[]> {
+    return await this.todoRepository.find({ relations: ['member'] });
   }
 }

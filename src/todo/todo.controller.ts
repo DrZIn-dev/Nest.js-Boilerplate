@@ -4,14 +4,17 @@ import { TodoEntity } from '@/model/todo.entity';
 import { User } from '@/user.decorator';
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CreateTodoDto, UpdateTodoDto } from './todo.dto';
 import { TodoService } from './todo.service';
@@ -19,6 +22,15 @@ import { TodoService } from './todo.service';
 @Controller('todo')
 export class TodoController {
   constructor(private todoService: TodoService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(ClassSerializerInterceptor)
+  public async getAll() {
+    return await this.todoService
+      .getAll()
+      .then((e) => e.map((todo) => new TodoEntity(todo)));
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)

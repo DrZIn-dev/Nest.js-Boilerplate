@@ -18,6 +18,11 @@ export enum TODO_STATUS {
 
 @Entity({ name: 'todos' })
 export class TodoEntity extends BaseEntity {
+  constructor(partial: Partial<TodoEntity>) {
+    super();
+    Object.assign(this, partial);
+  }
+
   @ManyToOne(() => MemberEntity)
   @JoinColumn({ name: 'member_id' })
   member: MemberEntity;
