@@ -6,8 +6,18 @@
 
 ## Feature
 
+**Member**
+
 - [x] Register Member.
-- [ ] Only member can create new todo with **not_started** status
+
+**Todo**
+
+- [x] Only member can create new todo with **not_started** status.
+- [ ] Every member can list **existing** todo.
+- [ ] Only todo **owner** can update their **title** and **description**.
+- [ ] Only todo **owner** can change status.
+- [ ] Only todo **owner** can delete todo.
+- [ ] Send notification to all assigned member when **owner** delete **active** todo.
 
 ---
 
