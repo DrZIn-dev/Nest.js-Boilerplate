@@ -13,7 +13,7 @@
 **Todo**
 
 - [x] Only member can create new todo with **not_started** status.
-- [ ] Every member can list **existing** todo.
+- [x] Every member can list **existing** todo.
 - [x] Only todo **owner** can update their **title** and **description**.
 - [x] Only todo **owner** can change status.
 - [x] Only todo **owner** can delete todo(soft delete).
@@ -734,7 +734,7 @@ Create Member Service For Control Member Entity.
 
   ```typescript
   // other code
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   ```
 
 3. สร้าง method update ใน **todo/todo.service.ts**
@@ -848,5 +848,85 @@ Create Member Service For Control Member Entity.
       .then((e) => e.map((todo) => new TodoEntity(todo)));
   }
   ```
+
+---
+
+### Rate Limit
+
+1. ติดตั้ง package
+
+   ```shell
+   npm i --save @nestjs/throttler
+   ```
+
+2. เพิ่ม RATE_LIMIT_ALLOW ใน .env
+
+```env
+RATE_LIMIT_ALLOW=10
+```
+
+3. เพิ่ม method getRateLimit ใน **config/config.service.ts**
+
+   ```typescript
+   public getRateLimit() {
+     return parseInt(this.getValue('RATE_LIMIT_ALLOW', true));
+   }
+   ```
+
+4. เพ่ิมตั้งค่า throttler ใน **global.module.ts**
+
+   ```typescript
+   // other import
+   import { ThrottlerModule } from '@nestjs/throttler';
+
+   @Global()
+   @Module({
+     imports: [
+       // other import
+       ThrottlerModule.forRoot({
+         ttl: 60,
+         limit: configService.getRateLimit(),
+       }),
+     ],
+     // other properties
+     exports: [
+       // other exports
+       ThrottlerModule,
+     ],
+   })
+   export class GlobalModule {}
+   ```
+
+5. ใช้งาน ThrottlerGuard ใน register member **auth/auth.controller.ts**
+
+   ```typescript
+   // other import
+   import { ThrottlerGuard } from '@nestjs/throttler';
+
+   // other controller
+   @Post('register')
+   @HttpCode(HttpStatus.CREATED)
+   @UseGuards(ThrottlerGuard)
+   public async register(@Body() dto: CreateMemberDto) {
+    return await this.memberService.create(dto);
+   }
+   ```
+
+6. ใช้งาน Guard create todo ใน **todo/todo.controller.ts**
+
+   ```typescript
+   // other import
+   import { ThrottlerGuard } from '@nestjs/throttler';
+
+   // other code
+   @Post()
+   @UseGuards(JwtAuthGuard, ThrottlerGuard)
+   public async create(
+   @User() member: MemberEntity,
+   @Body() dto: CreateTodoDto,
+   ) {
+     return await this.todoService.create(member.id, dto);
+   }
+   ```
 
 ---

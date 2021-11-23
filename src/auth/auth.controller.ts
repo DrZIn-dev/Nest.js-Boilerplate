@@ -15,6 +15,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -42,6 +43,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(ThrottlerGuard)
   public async register(@Body() dto: CreateMemberDto) {
     return await this.memberService.create(dto);
   }

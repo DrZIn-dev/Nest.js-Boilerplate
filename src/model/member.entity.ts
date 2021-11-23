@@ -5,7 +5,14 @@ import { BaseEntity } from './base.entity';
 
 @Entity({ name: 'members' })
 export class MemberEntity extends BaseEntity {
+  constructor(partial: Partial<MemberEntity>) {
+    super();
+    Object.assign(this, partial);
+  }
+
   @Column({ type: 'varchar', length: 255, nullable: false }) // typeORM
+  @IsString()
+  @IsNotEmpty()
   name: string;
 
   // class-validate
@@ -24,9 +31,4 @@ export class MemberEntity extends BaseEntity {
   @MaxLength(20)
   @Column({ type: 'text', nullable: false }) // typeORM
   password: string;
-
-  constructor(partial: Partial<MemberEntity>) {
-    super();
-    Object.assign(this, partial);
-  }
 }

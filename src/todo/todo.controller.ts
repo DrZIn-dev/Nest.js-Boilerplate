@@ -16,6 +16,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreateTodoDto, UpdateTodoDto } from './todo.dto';
 import { TodoService } from './todo.service';
 
@@ -33,7 +34,7 @@ export class TodoController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
   public async create(
     @User() member: MemberEntity,
     @Body() dto: CreateTodoDto,

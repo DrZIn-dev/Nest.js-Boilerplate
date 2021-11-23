@@ -1,5 +1,5 @@
-import * as dotenv from 'dotenv'
-import { TypeOrmModuleOptions } from '@nestjs/typeorm'
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -18,6 +18,10 @@ class ConfigService {
   public ensureValues(keys: string[]) {
     keys.forEach((k) => this.getValue(k, true));
     return this;
+  }
+
+  public getRateLimit() {
+    return parseInt(this.getValue('RATE_LIMIT_ALLOW', true));
   }
 
   public getPort() {
@@ -70,6 +74,7 @@ const configService = new ConfigService(process.env).ensureValues([
   'POSTGRES_DATABASE',
   'RUN_MIGRATIONS',
   'JWT_SECRET',
+  'RATE_LIMIT_ALLOW',
 ]);
 
 export { configService };
