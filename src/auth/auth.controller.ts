@@ -6,15 +6,16 @@ import { MemberEntity } from '@/model/member.entity';
 import { User } from '@/user.decorator';
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { JWTPayload } from './jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
@@ -31,8 +32,12 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  public async profile(@User() jwtPayload: JWTPayload) {
-    return jwtPayload;
+  @UseInterceptors(ClassSerializerInterceptor)
+  public async profile(@User() jwtPayload: MemberEntity) {
+    return this.memberService
+      .findById(jwtPayload.id)
+      .then((e) => new MemberEntity(e));
+    // return jwtPayload;
   }
 
   @Post('register')

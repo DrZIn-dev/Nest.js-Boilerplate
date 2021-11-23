@@ -28,4 +28,8 @@ export class MemberService {
   ): Promise<MemberEntity> {
     return await this.memberRepository.findOne({ where: { username } });
   }
+
+  public async findById(id: MemberEntity['id']): Promise<MemberEntity> {
+    return await this.memberRepository.findOne(id);
+  }
 }
