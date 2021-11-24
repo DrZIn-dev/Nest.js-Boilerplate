@@ -1135,3 +1135,33 @@ npm install --save-dev @types/cron
     }
   }
   ```
+
+### Queue
+
+1. ติดตั้ง package
+
+   ```shell
+   npm install --save @nestjs/bull bull
+   npm install --save-dev @types/bull
+   ```
+
+2. เพิ่ม redis ใน docker-compose
+
+   ```yaml
+   # other service
+   redis:
+     image: redis:6.2
+     command: >
+       --requirepass ${REDIS_PASSWORD}
+     ports:
+       - ${REDIS_PORT}:6379
+   redis_insight:
+     image: redislabs/redisinsight:latest
+     ports:
+       - 8001:8001
+   # other service
+   ```
+
+3. ตั้งค่า bull queue ใน **global.module.ts**
+
+4.
