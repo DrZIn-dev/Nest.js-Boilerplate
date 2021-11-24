@@ -5,9 +5,10 @@ import { AssignMemberModule } from './assigned-member/assigned-member.module';
 import { AssignMemberService } from './assigned-member/assigned-member.service';
 import { AuthModule } from './auth/auth.module';
 import { configService } from './config/config.service';
+import { NotificationConsumer } from './consumer/notification.consumer';
 import { GlobalModule } from './global.module';
 import { MemberModule } from './member/member.module';
-import { NotificationService } from './schedule/notification.service';
+import { NotificationSchedule } from './schedule/notification.schedule';
 import { TodoModule } from './todo/todo.module';
 @Module({
   imports: [
@@ -20,6 +21,6 @@ import { TodoModule } from './todo/todo.module';
     AssignMemberModule,
   ],
   controllers: [],
-  providers: [NotificationService, AssignMemberService],
+  providers: [NotificationSchedule, AssignMemberService, NotificationConsumer],
 })
 export class AppModule {}

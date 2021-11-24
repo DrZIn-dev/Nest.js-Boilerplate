@@ -1105,20 +1105,24 @@ npm install --save-dev @types/cron
 
   ```typescript
   import { TodoEntity, TODO_STATUS } from '@/model/todo.entity';
+  import { InjectQueue } from '@nestjs/bull';
   import { Injectable, Logger } from '@nestjs/common';
   import { Cron } from '@nestjs/schedule';
   import { InjectRepository } from '@nestjs/typeorm';
+  import { Queue } from 'bull';
   import { LessThanOrEqual, Repository } from 'typeorm';
 
   @Injectable()
-  export class NotificationService {
+  export class NotificationSchedule {
     constructor(
       @InjectRepository(TodoEntity)
       private todoRepository: Repository<TodoEntity>,
+      @InjectQueue('notification') private notificationQueue: Queue,
     ) {}
-    private readonly logger = new Logger(NotificationService.name);
 
-    @Cron('45 * * * * *')
+    private readonly logger = new Logger(NotificationSchedule.name);
+
+    @Cron('3 * * * * *')
     async handleCron() {
       this.logger.debug('Called when the current second is 45');
       return this.todoRepository
@@ -1130,7 +1134,14 @@ npm install --save-dev @types/cron
           relations: ['assigned_members', 'assigned_members.member'],
         })
         .then((todos) => {
-          console.log(todos);
+          todos.forEach((todo) => {
+            todo.assigned_members.forEach((member) => {
+              this.notificationQueue.add({
+                ...todo,
+                assigned_members: member,
+              });
+            });
+          });
         });
     }
   }
@@ -1141,7 +1152,7 @@ npm install --save-dev @types/cron
 1. ติดตั้ง package
 
    ```shell
-   npm install --save @nestjs/bull bull
+   npm install --save @nestjs/bull bull ioredis
    npm install --save-dev @types/bull
    ```
 
@@ -1162,6 +1173,91 @@ npm install --save-dev @types/cron
    # other service
    ```
 
-3. ตั้งค่า bull queue ใน **global.module.ts**
+3. เพ่ิม getRedisConfig ใน **config/config.service.ts**
 
-4.
+   ```typescript
+   public getRedisConfig() {
+     return {
+       host: this.getValue('REDIS_HOST'),
+       port: parseInt(this.getValue('REDIS_PORT')),
+       password: this.getValue('REDIS_PASSWORD'),
+     };
+   }
+   ```
+
+4. ตั้งค่า bull queue ใน **global.module.ts**
+
+   ```typescript
+   imports: [
+     BullModule.forRoot({
+       redis: configService.getRedisConfig(),
+     }),
+     BullModule.registerQueue({
+       name: 'notification',
+     }),
+    // other code
+   ```
+
+5. สร้าง consumer **consumer/notification.consumer.ts**
+
+```typescript
+import { AssignedMemberEntity } from '@/model/assigned-member.entity';
+import { TodoEntity } from '@/model/todo.entity';
+import { Process, Processor } from '@nestjs/bull';
+import { Logger } from '@nestjs/common';
+import { OmitType } from '@nestjs/mapped-types';
+import { Job } from 'bull';
+
+export class JobDateTodoDto extends OmitType(TodoEntity, [
+  'assigned_members',
+] as const) {
+  assigned_members: AssignedMemberEntity;
+}
+
+@Processor('notification')
+export class NotificationConsumer {
+  private logger = new Logger(NotificationConsumer.name);
+  @Process()
+  async transcode(job: Job<JobDateTodoDto>) {
+    this.logger.log(
+      `notify to ${job.data.assigned_members.member.username} :: ${job.data.title} is expired.`,
+    );
+    return {};
+  }
+}
+```
+
+6. ใช่งาน schedule กับ consumer ใน app.module
+
+   ```typescript
+   import { Module } from '@nestjs/common';
+   import { ScheduleModule } from '@nestjs/schedule';
+   import { TypeOrmModule } from '@nestjs/typeorm';
+   import { AssignMemberModule } from './assigned-member/assigned-member.module';
+   import { AssignMemberService } from './assigned-member/assigned-member.service';
+   import { AuthModule } from './auth/auth.module';
+   import { configService } from './config/config.service';
+   import { NotificationConsumer } from './consumer/notification.consumer';
+   import { GlobalModule } from './global.module';
+   import { MemberModule } from './member/member.module';
+   import { NotificationSchedule } from './schedule/notification.schedule';
+   import { TodoModule } from './todo/todo.module';
+   @Module({
+     imports: [
+       TypeOrmModule.forRoot(configService.getTypeOrmConfig()),
+       ScheduleModule.forRoot(),
+       MemberModule,
+       AuthModule,
+       GlobalModule,
+       TodoModule,
+       AssignMemberModule,
+     ],
+     controllers: [],
+     providers: [
+       NotificationSchedule,
+       AssignMemberService,
+       NotificationConsumer,
+     ],
+   })
+   export class AppModule {}
+   ```

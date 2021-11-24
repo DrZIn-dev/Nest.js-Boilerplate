@@ -1,3 +1,4 @@
+import { BullModule } from '@nestjs/bull';
 import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -11,6 +12,12 @@ import { TodoEntity } from './model/todo.entity';
 @Global()
 @Module({
   imports: [
+    BullModule.forRoot({
+      redis: configService.getRedisConfig(),
+    }),
+    BullModule.registerQueue({
+      name: 'notification',
+    }),
     JwtModule.register({
       secret: configService.getJwtSecret(),
       signOptions: { expiresIn: '7d' },
@@ -23,6 +30,6 @@ import { TodoEntity } from './model/todo.entity';
   ],
   controllers: [],
   providers: [JwtStrategy],
-  exports: [JwtModule, TypeOrmModule, ThrottlerModule],
+  exports: [JwtModule, TypeOrmModule, ThrottlerModule, BullModule],
 })
 export class GlobalModule {}

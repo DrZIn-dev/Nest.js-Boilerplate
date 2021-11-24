@@ -1,18 +1,22 @@
 import { TodoEntity, TODO_STATUS } from '@/model/todo.entity';
+import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Queue } from 'bull';
 import { LessThanOrEqual, Repository } from 'typeorm';
 
 @Injectable()
-export class NotificationService {
+export class NotificationSchedule {
   constructor(
     @InjectRepository(TodoEntity)
     private todoRepository: Repository<TodoEntity>,
+    @InjectQueue('notification') private notificationQueue: Queue,
   ) {}
-  private readonly logger = new Logger(NotificationService.name);
 
-  @Cron('45 * * * * *')
+  private readonly logger = new Logger(NotificationSchedule.name);
+
+  @Cron('3 * * * * *')
   async handleCron() {
     this.logger.debug('Called when the current second is 45');
     return this.todoRepository
@@ -24,7 +28,14 @@ export class NotificationService {
         relations: ['assigned_members', 'assigned_members.member'],
       })
       .then((todos) => {
-        console.log(todos);
+        todos.forEach((todo) => {
+          todo.assigned_members.forEach((member) => {
+            this.notificationQueue.add({
+              ...todo,
+              assigned_members: member,
+            });
+          });
+        });
       });
   }
 }
