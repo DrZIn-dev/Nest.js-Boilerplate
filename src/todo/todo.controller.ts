@@ -1,3 +1,5 @@
+import { CreateAssignMemberDto } from '@/assigned-member/assigned-member.dto';
+import { AssignMemberService } from '@/assigned-member/assigned-member.service';
 import { JwtAuthGuard } from '@/jwt-auth.guard';
 import { MemberEntity } from '@/model/member.entity';
 import { TodoEntity } from '@/model/todo.entity';
@@ -10,6 +12,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  InternalServerErrorException,
   Param,
   Patch,
   Post,
@@ -22,7 +25,10 @@ import { TodoService } from './todo.service';
 
 @Controller('todo')
 export class TodoController {
-  constructor(private todoService: TodoService) {}
+  constructor(
+    private todoService: TodoService,
+    private assignMemberService: AssignMemberService,
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -51,6 +57,34 @@ export class TodoController {
     @Body() dto: UpdateTodoDto,
   ) {
     return await this.todoService.update(member.id, id, dto);
+  }
+
+  @Post('/:id/member')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async assignMember(
+    @Param('id') id: TodoEntity['id'],
+    @Body() dto: CreateAssignMemberDto,
+  ) {
+    return await this.assignMemberService
+      .createMany(id, dto)
+      .catch(({ message }) => {
+        throw new InternalServerErrorException(message);
+      });
+  }
+
+  @Delete('/:id/member')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async unassignMember(
+    @Param('id') id: TodoEntity['id'],
+    @Body() dto: CreateAssignMemberDto,
+  ) {
+    return await this.assignMemberService
+      .remove(id, dto)
+      .catch(({ message }) => {
+        throw new InternalServerErrorException(message);
+      });
   }
 
   @Delete(':id')

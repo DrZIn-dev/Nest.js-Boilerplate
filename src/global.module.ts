@@ -4,7 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { configService } from './config/config.service';
-import { AssignedMemberEntity } from './model/assignedMembers.entity';
+import { AssignedMemberEntity } from './model/assigned-member.entity';
 import { MemberEntity } from './model/member.entity';
 import { TodoEntity } from './model/todo.entity';
 

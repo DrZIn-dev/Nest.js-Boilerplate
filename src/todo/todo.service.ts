@@ -61,6 +61,8 @@ export class TodoService {
   }
 
   public async getAll(): Promise<TodoEntity[]> {
-    return await this.todoRepository.find({ relations: ['member'] });
+    return await this.todoRepository.find({
+      relations: ['member', 'assigned_members', 'assigned_members.member'],
+    });
   }
 }

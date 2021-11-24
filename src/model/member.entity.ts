@@ -1,6 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
+import { AssignedMemberEntity } from './assigned-member.entity';
 import { BaseEntity } from './base.entity';
 
 @Entity({ name: 'members' })
@@ -31,4 +32,10 @@ export class MemberEntity extends BaseEntity {
   @MaxLength(20)
   @Column({ type: 'text', nullable: false }) // typeORM
   password: string;
+
+  @OneToMany(
+    () => AssignedMemberEntity,
+    (assignedMember) => assignedMember.member,
+  )
+  todos: AssignedMemberEntity[];
 }

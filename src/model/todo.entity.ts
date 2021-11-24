@@ -6,7 +6,8 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { AssignedMemberEntity } from './assigned-member.entity';
 import { BaseEntity } from './base.entity';
 import { MemberEntity } from './member.entity';
 
@@ -47,4 +48,10 @@ export class TodoEntity extends BaseEntity {
   @IsDate()
   @Column({ type: 'timestamptz', nullable: false })
   due_date: Date;
+
+  @OneToMany(
+    () => AssignedMemberEntity,
+    (assignedMember) => assignedMember.todo,
+  )
+  assigned_members: AssignedMemberEntity[];
 }

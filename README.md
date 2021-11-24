@@ -933,11 +933,153 @@ RATE_LIMIT_ALLOW=10
 
 ### Todo - Assigned Member
 
-1. แก้ไข UpdateTodoDto ให้รองรับ members
+1. แก้ไข **mode/assigned-member.entity.ts** ให้รองรับ index
+
+   ```typescript
+   import { Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
+   import { BaseEntity } from './base.entity';
+   import { MemberEntity } from './member.entity';
+   import { TodoEntity } from './todo.entity';
+
+   @Entity({ name: 'assigned_members' })
+   @Unique(['todo', 'member'])
+   export class AssignedMemberEntity extends BaseEntity {
+     @ManyToOne(() => TodoEntity)
+     @JoinColumn({ name: 'todo_id' })
+     todo: TodoEntity;
+
+     @ManyToOne(() => MemberEntity)
+     @JoinColumn({ name: 'member_id' })
+     member: MemberEntity;
+   }
+   ```
+
+2. แก้ไข **src/todo.entity.ts** ให้รองรับ one-to-many กับ assigned-members
+
+   ```typescript
+   // other code
+   @OneToMany(
+     () => AssignedMemberEntity,
+     (assignedMember) => assignedMember.todo,
+   )
+   assigned_members: AssignedMemberEntity[];
+   ```
+
+3. สร้าง **src/assign-member.dto.ts**
+
+   ```typescript
+   import { IsString } from 'class-validator';
+
+   export class CreateAssignMemberDto {
+     @IsString({ each: true })
+     members: string[];
+   }
+   ```
+
+4. สร้าง **src/assign-member.service.ts**
+
+- สามารถสร้าง assign member พร้อมกันได้หลาย member
+- สามารถลบ assign member พร้อมกันได้หลาย member
+
+  ```typescript
+  import { AssignedMemberEntity } from '@/model/assigned-member.entity';
+  import { TodoEntity } from '@/model/todo.entity';
+  import { Injectable } from '@nestjs/common';
+  import { InjectRepository } from '@nestjs/typeorm';
+  import { Repository } from 'typeorm';
+  import { CreateAssignMemberDto } from './assign-member.dto';
+
+  @Injectable()
+  export class AssignMemberService {
+    constructor(
+      @InjectRepository(AssignedMemberEntity)
+      private assignMemberRepository: Repository<AssignedMemberEntity>,
+    ) {}
+
+    public async getAll() {
+      return await this.assignMemberRepository.find({ relations: ['todo'] });
+    }
+
+    public async createMany(
+      todoId: TodoEntity['id'],
+      members: CreateAssignMemberDto,
+    ) {
+      const insertResult = await Promise.all(
+        members.members.map((memberId) => {
+          const newAssignedMember = {
+            todo: {
+              id: todoId,
+            },
+            member: {
+              id: memberId,
+            },
+          };
+          return this.assignMemberRepository.save(newAssignedMember);
+        }),
+      );
+      return insertResult.map((e) => e.id);
+    }
+
+    public async remove(
+      todoId: TodoEntity['id'],
+      members: CreateAssignMemberDto,
+    ) {
+      const insertResult = await Promise.all(
+        members.members.map((memberId) => {
+          return this.assignMemberRepository.delete({
+            todo: { id: todoId },
+            member: { id: memberId },
+          });
+        }),
+      );
+      return insertResult;
+    }
+  }
+  ```
+
+5. สร้าง **src/assign-member.module.ts**
 
 ```typescript
+import { Module } from '@nestjs/common';
+import { AssignMemberService } from './assign-member.service';
 
+@Module({ providers: [AssignMemberService] })
+export class AssignMemberModule {}
 ```
+
+6. เพิ่ม controller สำหรับ assign member ใน **src/todo.controller.ts**
+
+   ```typescript
+   // other code
+   @Post('/:id/member')
+   @UseGuards(JwtAuthGuard)
+   @HttpCode(HttpStatus.NO_CONTENT)
+   public async assignMember(
+     @Param('id') id: TodoEntity['id'],
+     @Body() dto: CreateAssignMemberDto,
+   ) {
+     return await this.assignMemberService
+       .createMany(id, dto)
+       .catch(({ message }) => {
+         throw new InternalServerErrorException(message);
+       });
+   }
+
+   @Delete('/:id/member')
+   @UseGuards(JwtAuthGuard)
+   @HttpCode(HttpStatus.NO_CONTENT)
+   public async unassignMember(
+     @Param('id') id: TodoEntity['id'],
+     @Body() dto: CreateAssignMemberDto,
+   ) {
+     return await this.assignMemberService
+       .remove(id, dto)
+       .catch(({ message }) => {
+         throw new InternalServerErrorException(message);
+       });
+   }
+   // other code
+   ```
 
 ### Task Scheduler
 
@@ -958,3 +1100,38 @@ npm install --save-dev @types/cron
    ```
 
 3. สร้าง **schedule/notification.service.ts**
+
+- query ทุก todo ที่จะหมดอายุขณะ active
+
+  ```typescript
+  import { TodoEntity, TODO_STATUS } from '@/model/todo.entity';
+  import { Injectable, Logger } from '@nestjs/common';
+  import { Cron } from '@nestjs/schedule';
+  import { InjectRepository } from '@nestjs/typeorm';
+  import { LessThanOrEqual, Repository } from 'typeorm';
+
+  @Injectable()
+  export class NotificationService {
+    constructor(
+      @InjectRepository(TodoEntity)
+      private todoRepository: Repository<TodoEntity>,
+    ) {}
+    private readonly logger = new Logger(NotificationService.name);
+
+    @Cron('45 * * * * *')
+    async handleCron() {
+      this.logger.debug('Called when the current second is 45');
+      return this.todoRepository
+        .find({
+          where: {
+            status: TODO_STATUS.IN_PROGRESS,
+            due_date: LessThanOrEqual(new Date()),
+          },
+          relations: ['assigned_members', 'assigned_members.member'],
+        })
+        .then((todos) => {
+          console.log(todos);
+        });
+    }
+  }
+  ```
