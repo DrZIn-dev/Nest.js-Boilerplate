@@ -5,7 +5,7 @@ import type IORedis from 'ioredis';
 dotenv.config();
 
 class ConfigService {
-  constructor(private env: { [k: string]: string | undefined }) {}
+  constructor(private env: { [k: string]: string | undefined }) { }
 
   private getValue(key: string, throwOnMissing = true): string {
     const value = this.env[key];
@@ -59,7 +59,7 @@ class ConfigService {
       password: this.getValue('POSTGRES_PASSWORD'),
       database: this.getValue('POSTGRES_DATABASE'),
 
-      entities: ['src/model/**/*.entity{.ts,.js}'],
+      entities: ['src/model/**/*.entity{.ts,.js}', 'dist/model/**/*.entity{.ts,.js}'],
 
       migrationsTableName: 'migration',
       migrations: ['src/migration/*.ts'],

@@ -17,7 +17,7 @@ import {
   Patch,
   Post,
   UseGuards,
-  UseInterceptors,
+  UseInterceptors
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreateTodoDto, UpdateTodoDto } from './todo.dto';
@@ -28,7 +28,7 @@ export class TodoController {
   constructor(
     private todoService: TodoService,
     private assignMemberService: AssignMemberService,
-  ) {}
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard)
