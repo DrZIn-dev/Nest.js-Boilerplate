@@ -1,5 +1,5 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import * as dotenv from 'dotenv';
+import * as dotenv from 'dotenv'
+import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 
 dotenv.config();
 
@@ -25,7 +25,7 @@ class ConfigService {
   }
 
   public getJwtSecret() {
-    return 'hsadkfjjhsadfkjhsdakfhsdkjafhkasdf';
+    return this.getValue('JWT_SECRET', true);
   }
 
   public getSaltRounds() {
@@ -69,6 +69,7 @@ const configService = new ConfigService(process.env).ensureValues([
   'POSTGRES_PASSWORD',
   'POSTGRES_DATABASE',
   'RUN_MIGRATIONS',
+  'JWT_SECRET',
 ]);
 
 export { configService };
