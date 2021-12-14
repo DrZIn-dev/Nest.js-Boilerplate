@@ -1,5 +1,5 @@
-import * as dotenv from 'dotenv'
-import { TypeOrmModuleOptions } from '@nestjs/typeorm'
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -47,7 +47,10 @@ class ConfigService {
       password: this.getValue('POSTGRES_PASSWORD'),
       database: this.getValue('POSTGRES_DATABASE'),
 
-      entities: ['src/model/**/*.entity{.ts,.js}'],
+      entities: [
+        'src/model/**/*.entity{.ts,.js}',
+        'dist/model/**/*.entity{.ts,.js}',
+      ],
 
       migrationsTableName: 'migration',
       migrations: ['src/migration/*.ts'],

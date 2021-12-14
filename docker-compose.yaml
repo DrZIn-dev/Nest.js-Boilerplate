@@ -1,6 +1,17 @@
 version: '3.7'
 
 services:
+  api:
+    depends_on:
+      - postgres
+    build:
+      context: .
+      target: development
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env
+    ports:
+      - 3000:${PORT}
   postgres:
     image: postgres:14.1
     env_file: .env
@@ -21,4 +32,4 @@ services:
       - pgadmin_pv:/var/lib/pgadmin
 
 volumes:
-  pgadmin_pv:
+  pgadmin_pv: null
