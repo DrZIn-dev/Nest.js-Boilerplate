@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { configService } from './config/config.service';
+import { HealthModule } from './health/health.module';
+import { ConfigProvider } from './pkg/provider/config.provider';
+import { LoggerProvider } from './pkg/provider/logger.provider';
+import { PostgresProvider } from './pkg/provider/postgres.provider';
+
 @Module({
-  imports: [TypeOrmModule.forRoot(configService.getTypeOrmConfig())],
+  imports: [ConfigProvider, PostgresProvider, LoggerProvider, HealthModule],
   controllers: [],
   providers: [],
 })
