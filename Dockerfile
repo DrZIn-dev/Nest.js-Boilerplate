@@ -1,26 +1,17 @@
-FROM node:14-alpine AS development
-WORKDIR /usr/src/todo
-COPY package*.json ./
+FROM node:16-alpine3.12 AS build
+WORKDIR /usr/src/app
+COPY package.json ./
 RUN npm install -g pnpm
-RUN apk add g++ make python3
 RUN pnpm install
 COPY . .
-CMD ["sh", "start.sh"]
+RUN pnpm run build
 
-
-FROM node:14-alpine3.12 AS build
-WORKDIR /usr/src/todo
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-
-FROM node:14-alpine3.12 as production
+FROM node:16-alpine3.12 as production
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
-WORKDIR /usr/src/todo
-COPY package*.json ./
-RUN npm install --only=production
+WORKDIR /usr/src/app
+COPY package.json ./
+RUN npm install --prod
 COPY . .
-COPY --from=build /usr/src/todo/dist ./dist
+COPY --from=build /usr/src/app/dist ./dist
 CMD ["node", "dist/main"]
